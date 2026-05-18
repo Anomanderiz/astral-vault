@@ -1,0 +1,487 @@
+@import '@fontsource/cinzel/700.css';
+@import '@fontsource/crimson-pro/400.css';
+@import '@fontsource/crimson-pro/400-italic.css';
+@import '@fontsource/crimson-pro/600.css';
+
+/* ── Design tokens ─────────────────────────────────────────────────────────── */
+:root {
+  --void:           #05040f;
+  --void-mid:       #0d0b1e;
+  --indigo-deep:    #1a1740;
+  --gold:           #c9a84c;
+  --gold-light:     #f0d080;
+  --silver:         #b8c4d4;
+  --parchment:      #f2e8d0;
+  --parchment-dark: #d4c49a;
+
+  --rarity-common:    #aaaaaa;
+  --rarity-uncommon:  #2dc46e;
+  --rarity-rare:      #4a90d9;
+  --rarity-very-rare: #9b59b6;
+  --rarity-legendary: #e67e22;
+  --rarity-artifact:  #e74c3c;
+
+  --card-w: 280px;
+  --card-h: 420px;
+  --card-radius: 12px;
+}
+
+/* ── Reset ─────────────────────────────────────────────────────────────────── */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+body {
+  background: var(--void);
+  color: var(--parchment);
+  font-family: 'Crimson Pro', Georgia, serif;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+button {
+  font-family: inherit;
+}
+
+/* Parchment scrollbar */
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: var(--parchment-dark); border-radius: 2px; }
+::-webkit-scrollbar-thumb { background: var(--gold); border-radius: 2px; }
+
+/* ── App shell ─────────────────────────────────────────────────────────────── */
+.app {
+  width: 100vw;
+  height: 100vh;
+  position: relative;
+}
+
+.ui-layer {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  height: 100vh;
+  padding: 32px 16px 16px;
+  overflow: hidden;
+}
+
+/* ── Header ────────────────────────────────────────────────────────────────── */
+header {
+  text-align: center;
+  margin-bottom: 20px;
+  flex-shrink: 0;
+}
+
+header h1 {
+  font-family: 'Cinzel', serif;
+  font-weight: 700;
+  font-size: 3rem;
+  color: var(--gold);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  text-shadow: 0 0 30px rgba(201, 168, 76, 0.45), 0 0 60px rgba(201, 168, 76, 0.15);
+  line-height: 1.1;
+}
+
+header p {
+  font-style: italic;
+  font-size: 1.05rem;
+  color: var(--silver);
+  letter-spacing: 0.1em;
+  margin-top: 4px;
+}
+
+/* ── Player filter ─────────────────────────────────────────────────────────── */
+.player-filter {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-bottom: 20px;
+  flex-shrink: 0;
+}
+
+.filter-pill {
+  padding: 6px 16px;
+  border-radius: 20px;
+  border: 1px solid rgba(184, 196, 212, 0.45);
+  background: transparent;
+  color: var(--silver);
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: border-color 0.2s ease, color 0.2s ease;
+  user-select: none;
+}
+
+.filter-pill.active {
+  border-color: var(--gold);
+  color: var(--gold);
+}
+
+.filter-pill:hover:not(.active) {
+  border-color: var(--gold-light);
+  color: var(--gold-light);
+}
+
+/* ── Carousel scene ────────────────────────────────────────────────────────── */
+.carousel-scene {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  perspective: 1200px;
+  perspective-origin: 50% 45%;
+  position: relative;
+  width: 100%;
+  cursor: grab;
+  user-select: none;
+  touch-action: pan-y;
+  min-height: 0;
+}
+
+.carousel-scene:active {
+  cursor: grabbing;
+}
+
+.carousel-scene.cards-hiding .carousel-card {
+  opacity: 0 !important;
+  transform: scale(0.95) !important;
+  transition: opacity 0.2s ease, transform 0.2s ease !important;
+}
+
+.carousel-inner {
+  position: relative;
+  transform-style: preserve-3d;
+  width: var(--card-w);
+  height: var(--card-h);
+  flex-shrink: 0;
+}
+
+.carousel-card {
+  position: absolute;
+  inset: 0;
+  transform-style: preserve-3d;
+}
+
+/* ── Arrow buttons ─────────────────────────────────────────────────────────── */
+.carousel-btn {
+  background: rgba(13, 11, 30, 0.85);
+  border: 1px solid rgba(201, 168, 76, 0.6);
+  color: var(--gold);
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  font-size: 1.1rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s, box-shadow 0.2s, color 0.2s;
+  flex-shrink: 0;
+}
+
+.carousel-btn:hover {
+  background: var(--indigo-deep);
+  color: var(--gold-light);
+  box-shadow: 0 0 14px rgba(201, 168, 76, 0.35);
+}
+
+.carousel-btn.prev,
+.carousel-btn.next {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 10;
+}
+
+.carousel-btn.prev { left: 16px; }
+.carousel-btn.next { right: 16px; }
+
+.carousel-nav-mobile {
+  display: none;
+  gap: 20px;
+  align-items: center;
+  margin-top: 16px;
+}
+
+.carousel-nav-mobile span {
+  color: var(--silver);
+  font-size: 1rem;
+}
+
+/* ── Card wrapper (3D flip) ────────────────────────────────────────────────── */
+.card-wrapper {
+  width: var(--card-w);
+  height: var(--card-h);
+  position: relative;
+  transform-style: preserve-3d;
+  transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: pointer;
+  border-radius: var(--card-radius);
+}
+
+.card-wrapper.flipped {
+  transform: rotateY(180deg);
+}
+
+.card-face {
+  position: absolute;
+  inset: 0;
+  backface-visibility: hidden;
+  border-radius: var(--card-radius);
+  overflow: hidden;
+}
+
+/* ── Front face ────────────────────────────────────────────────────────────── */
+.card-front {
+  background: linear-gradient(155deg, var(--indigo-deep) 0%, #110f2a 55%, var(--void) 100%);
+  display: flex;
+  flex-direction: column;
+}
+
+.card-header {
+  background: rgba(10, 8, 28, 0.9);
+  padding: 14px 14px 10px;
+  border-bottom: 1px solid rgba(201, 168, 76, 0.5);
+}
+
+.card-name {
+  font-family: 'Cinzel', serif;
+  font-weight: 700;
+  font-size: 0.88rem;
+  color: var(--gold);
+  text-align: center;
+  letter-spacing: 0.05em;
+  line-height: 1.3;
+  text-transform: uppercase;
+}
+
+.card-type-line {
+  font-style: italic;
+  font-size: 0.76rem;
+  color: var(--silver);
+  text-align: center;
+  padding: 6px 12px 4px;
+  line-height: 1.4;
+}
+
+.card-rarity-row {
+  display: flex;
+  justify-content: center;
+  padding: 2px 12px 4px;
+}
+
+.rarity-badge {
+  font-family: 'Cinzel', serif;
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  color: #000;
+  padding: 3px 10px;
+  border-radius: 10px;
+}
+
+.card-divider {
+  padding: 2px 14px;
+}
+
+.card-divider svg {
+  width: 100%;
+  height: 12px;
+  display: block;
+}
+
+.card-properties {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding: 6px 12px;
+  flex: 1;
+  align-content: flex-start;
+}
+
+.property-chip {
+  font-family: 'Cinzel', serif;
+  font-size: 0.6rem;
+  color: var(--gold-light);
+  background: rgba(201, 168, 76, 0.08);
+  border: 1px solid rgba(201, 168, 76, 0.3);
+  border-radius: 4px;
+  padding: 2px 7px;
+  letter-spacing: 0.04em;
+}
+
+.card-owner {
+  font-family: 'Cinzel', serif;
+  font-size: 0.68rem;
+  color: var(--silver);
+  text-align: center;
+  padding: 8px 12px 12px;
+  border-top: 1px solid rgba(184, 196, 212, 0.15);
+  letter-spacing: 0.06em;
+}
+
+/* ── Back face ─────────────────────────────────────────────────────────────── */
+.card-back {
+  background: var(--parchment);
+  transform: rotateY(180deg);
+  display: flex;
+  flex-direction: column;
+  padding: 14px 16px 14px;
+}
+
+.flip-back-btn {
+  position: absolute;
+  top: 8px;
+  right: 10px;
+  background: none;
+  border: none;
+  font-size: 1.05rem;
+  color: #5a4a2a;
+  cursor: pointer;
+  opacity: 0.55;
+  transition: opacity 0.2s;
+  z-index: 2;
+  line-height: 1;
+  padding: 2px;
+}
+
+.flip-back-btn:hover {
+  opacity: 1;
+}
+
+.card-description {
+  flex: 1;
+  overflow-y: auto;
+  font-size: 0.86rem;
+  color: #3a2e1a;
+  line-height: 1.65;
+  padding-right: 4px;
+  padding-top: 4px;
+}
+
+.card-description p {
+  margin-bottom: 0.55em;
+}
+
+.card-description p:last-child {
+  margin-bottom: 0;
+}
+
+.card-description strong {
+  font-weight: 600;
+  color: #1e1508;
+}
+
+.back-divider {
+  border: none;
+  border-top: 1px solid var(--parchment-dark);
+  margin: 8px 0 6px;
+  flex-shrink: 0;
+}
+
+.flavour-text {
+  font-style: italic;
+  font-size: 0.8rem;
+  color: #8a7550;
+  line-height: 1.45;
+  flex-shrink: 0;
+}
+
+/* ── Edge-case layouts ─────────────────────────────────────────────────────── */
+.single-item {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.empty-vault {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.empty-vault p {
+  font-style: italic;
+  font-size: 1.15rem;
+  color: var(--gold);
+  text-align: center;
+  max-width: 380px;
+  line-height: 1.6;
+}
+
+/* ── Loading constellation ─────────────────────────────────────────────────── */
+.loading-state {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+}
+
+.loading-dot {
+  width: 8px;
+  height: 8px;
+  background: var(--gold);
+  border-radius: 50%;
+  animation: constellation-pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes constellation-pulse {
+  0%, 80%, 100% { opacity: 0.15; transform: scale(0.75); }
+  40%           { opacity: 1;    transform: scale(1.25); }
+}
+
+/* ── Responsive ────────────────────────────────────────────────────────────── */
+@media (max-width: 768px) {
+  :root {
+    --card-w: 220px;
+    --card-h: 340px;
+  }
+
+  header h1 {
+    font-size: 2rem;
+    letter-spacing: 0.12em;
+  }
+
+  .carousel-scene {
+    flex-direction: column;
+    perspective: 900px;
+  }
+
+  .carousel-btn.prev,
+  .carousel-btn.next {
+    display: none;
+  }
+
+  .carousel-nav-mobile {
+    display: flex;
+  }
+
+  .card-name {
+    font-size: 0.8rem;
+  }
+
+  .card-description {
+    font-size: 0.82rem;
+  }
+}
+
+@media (min-width: 769px) {
+  .desktop-only {
+    display: flex;
+  }
+}
