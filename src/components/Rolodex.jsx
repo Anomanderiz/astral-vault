@@ -1,11 +1,12 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import ItemCard from './ItemCard';
 
-const GAP = 60;
+const GAP = 80;
+const MIN_RADIUS = 440;
+const DRAG_THRESHOLD = 8;
 
-function getCardDimensions() {
-  const isMobile = window.innerWidth < 768;
-  return { w: isMobile ? 220 : 280, h: isMobile ? 340 : 420 };
+function getCardWidth() {
+  return window.innerWidth < 768 ? 220 : 360;
 }
 
 function normalizeAngle(a) {
@@ -16,14 +17,14 @@ export default function Rolodex({ items, hiding }) {
   const [rotation, setRotation] = useState(0);
   const [snapping, setSnapping] = useState(false);
   const rotationRef = useRef(0);
-  const dragRef = useRef({ active: false, startX: 0, startRotation: 0 });
+  const dragRef = useRef({ startX: null, startRotation: 0, dragging: false });
 
   const N = items.length;
-  const { w: cardW } = getCardDimensions();
+  const cardW = getCardWidth();
   const angle = N > 1 ? (2 * Math.PI) / N : 0;
-  const radius = N > 1 ? (cardW + GAP) / (2 * Math.tan(angle / 2)) : 0;
+  const calcRadius = N > 1 ? (cardW + GAP) / (2 * Math.tan(angle / 2)) : 0;
+  const radius = Math.max(calcRadius, MIN_RADIUS);
 
-  // Reset carousel position when item list changes
   useEffect(() => {
     setRotation(0);
     rotationRef.current = 0;
@@ -61,28 +62,30 @@ export default function Rolodex({ items, hiding }) {
     return () => window.removeEventListener('keydown', onKey);
   }, [goNext, goPrev]);
 
-  const onPointerDown = (e) => {
+  // No setPointerCapture — that swallows click events on buttons and cards.
+  // Use a movement threshold so taps fire click normally; only dragging triggers rotation.
+  const onPointerDown = useCallback((e) => {
     if (N <= 1) return;
-    e.currentTarget.setPointerCapture(e.pointerId);
-    dragRef.current = { active: true, startX: e.clientX, startRotation: rotationRef.current };
-    setSnapping(false);
-  };
+    if (e.target.closest('button')) return;
+    dragRef.current = { startX: e.clientX, startRotation: rotationRef.current, dragging: false };
+  }, [N]);
 
-  const onPointerMove = (e) => {
-    if (!dragRef.current.active) return;
-    const delta = e.clientX - dragRef.current.startX;
-    const newRot = dragRef.current.startRotation + delta / radius;
+  const onPointerMove = useCallback((e) => {
+    const { startX, startRotation } = dragRef.current;
+    if (startX === null) return;
+    const delta = e.clientX - startX;
+    if (Math.abs(delta) > DRAG_THRESHOLD) dragRef.current.dragging = true;
+    if (!dragRef.current.dragging) return;
+    setSnapping(false);
+    const newRot = startRotation + delta / radius;
     rotationRef.current = newRot;
     setRotation(newRot);
-  };
+  }, [radius]);
 
-  const onPointerUp = () => {
-    if (!dragRef.current.active) return;
-    dragRef.current.active = false;
-    snap(rotationRef.current);
-  };
-
-  // ── Edge cases ─────────────────────────────────────────────────────────────
+  const onPointerUp = useCallback(() => {
+    if (dragRef.current.dragging) snap(rotationRef.current);
+    dragRef.current = { startX: null, startRotation: 0, dragging: false };
+  }, [snap]);
 
   if (N === 0) {
     return (
@@ -100,17 +103,14 @@ export default function Rolodex({ items, hiding }) {
     );
   }
 
-  // ── Render ─────────────────────────────────────────────────────────────────
-
   return (
     <div
       className={`carousel-scene${hiding ? ' cards-hiding' : ''}`}
       onPointerDown={onPointerDown}
       onPointerMove={onPointerMove}
       onPointerUp={onPointerUp}
-      onPointerCancel={onPointerUp}
+      onPointerLeave={onPointerUp}
     >
-      {/* Desktop arrows */}
       <button className="carousel-btn prev desktop-only" onClick={goPrev} aria-label="Previous">←</button>
 
       <div
@@ -127,8 +127,8 @@ export default function Rolodex({ items, hiding }) {
 
           let opacity = 0.45;
           let scale = 1;
-          if (steps < 0.5) { opacity = 1; scale = 1.06; }
-          else if (steps < 1.5) { opacity = 0.75; }
+          if (steps < 0.5)       { opacity = 1;    scale = 1.05; }
+          else if (steps < 1.5)  { opacity = 0.75; }
 
           return (
             <div
@@ -137,7 +137,9 @@ export default function Rolodex({ items, hiding }) {
               style={{
                 transform: `rotateY(${i * angle}rad) translateZ(${radius}px) scale(${scale})`,
                 opacity,
-                transition: snapping ? 'opacity 0.3s ease, transform 0.4s cubic-bezier(0.25, 0.8, 0.25, 1)' : 'none',
+                transition: snapping
+                  ? 'opacity 0.3s ease, transform 0.4s cubic-bezier(0.25, 0.8, 0.25, 1)'
+                  : 'none',
               }}
             >
               <ItemCard item={item} />
@@ -148,7 +150,6 @@ export default function Rolodex({ items, hiding }) {
 
       <button className="carousel-btn next desktop-only" onClick={goNext} aria-label="Next">→</button>
 
-      {/* Mobile nav row */}
       <div className="carousel-nav-mobile">
         <button className="carousel-btn" onClick={goPrev} aria-label="Previous">←</button>
         <span>·</span>
